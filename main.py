@@ -1,74 +1,88 @@
+import pyray as rl
 
 def main():
-    book_path = "books/frankenstein.txt"
+    book_path = "Nomina 1.2 con Deducciones.txt"
     text = get_book_text(book_path)
     num_words = count_words(text)
 
-    print("--- Begin report of " + book_path + " ---")
-    print(f"{num_words} words found in the document")
-
+    # Generar el reporte
     letter_dict = count_letter(text)
-    sorted_dict = []
+    sorted_dict = sorted(letter_dict.items(), key=lambda x: x[1], reverse=True)
 
-    for key in letter_dict:
-        sorted_dict.append({ "letter": key, "num": letter_dict[key]})
-    
-    def myFunc(e):
-        return e["num"]
+    # Configuración de la ventana
+    window_width, window_height = 800, 600
+    rl.init_window(window_width, window_height, "Book Report Viewer")
+    rl.set_target_fps(60)
 
-    
-    
-    sorted_dict.sort(reverse= True, key=myFunc)
+    # Configuración del diseño
+    font_size = 20
+    margin = 20
+    column_width = 100
+    header_height = 40
+    row_height = 30
 
-    print("")
-    for i in sorted_dict:
-        print(f"The '{i["letter"]}' character was found {i["num"]} times")
-    print("--- End report ---")
- 
+    scroll_y = 0
+    content_height = len(sorted_dict) * row_height + header_height
 
-  
+    animation_progress = 0  # Control de animación
 
-    
-    
+    while not rl.window_should_close():
+        # Movimiento del scroll
+        if rl.is_key_down(rl.KEY_DOWN):
+            scroll_y -= 5
+        if rl.is_key_down(rl.KEY_UP):
+            scroll_y += 5
+        scroll_y = max(min(scroll_y, 0), -max(0, content_height - window_height + margin * 2))
 
+        # Dibujar la pantalla
+        rl.begin_drawing()
+        rl.clear_background(rl.RAYWHITE)
 
+        # Dibujar encabezados
+        rl.draw_rectangle(margin, margin + scroll_y, window_width - 2 * margin, header_height, rl.DARKGRAY)
+        rl.draw_text("Letter", margin + 10, margin + 10 + scroll_y, font_size, rl.RAYWHITE)
+        rl.draw_text("Count", margin + column_width + 10, margin + 10 + scroll_y, font_size, rl.RAYWHITE)
 
+        # Dibujar las filas
+        y_offset = margin + header_height + scroll_y
+        for idx, (letter, count) in enumerate(sorted_dict):
+            # Alternar colores de fila
+            if idx % 2 == 0:
+                rl.draw_rectangle(margin, y_offset, window_width - 2 * margin, row_height, rl.LIGHTGRAY)
 
+            # Dibujar datos de la fila
+            rl.draw_text(letter, margin + 10, y_offset + 5, font_size, rl.DARKBLUE)
+            if animation_progress >= idx:
+                rl.draw_text(str(count), margin + column_width + 10, y_offset + 5, font_size, rl.DARKBLUE)
+            y_offset += row_height
 
-    
-    
+        # Incrementar animación
+        animation_progress += 0.1
+
+        rl.end_drawing()
+
+    rl.close_window()
+
+# Funciones auxiliares
 def count_letter(text):
-    lower_text = to_lower(text)
-    letter_set = set()
     letter_dic = {}
-    for letter in lower_text: 
-        if letter.isalpha(): #agrega al set los caracteres diferentes que encuentre
-            letter_set.add(letter)
-
-    
-    for letter in letter_set:   #llena el diccionario con letras e inicia su contador a cero 
-        letter_dic[letter] = 0
-
-    
-    for letter in lower_text:
+    for letter in text.lower():
         if letter.isalpha():
-            letter_dic[letter] += 1
-
+            letter_dic[letter] = letter_dic.get(letter, 0) + 1
     return letter_dic
-    
-
-def to_lower(text):
-    lower_text = text.lower()
-    return lower_text
 
 def get_book_text(path):
-    with open(path) as f:
-        return f.read()
+    try:
+        with open(path, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"Error: The file at {path} was not found.")
+        return ""
 
 def count_words(string):
-    words = string.split()
-    
-    return len(words)
+    return len(string.split())
 
+# Ejecutar el programa
+if __name__ == "__main__":
+    main()
 
-main()
